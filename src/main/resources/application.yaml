@@ -1,0 +1,172 @@
+spring:
+  application:
+    name: SinayRestCore
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 500MB
+      file-size-threshold: 10KB
+      location: ${java.io.tmpdir}
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/sinay_core?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: sinay
+    password: K4dk0sz4.!*
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: SinayHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: update        # entity değişince otomatik günceller — eski tarz, hızlı geliştirme
+    show-sql: false           # dev'de true yapabilirsin
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+        jdbc:
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
+        cache:
+          use_second_level_cache: false
+    open-in-view: false       # performance — lazy loading'i controller'da değil service'de yönet
+
+  mail:
+    host: sinay.tr
+    port: 465
+    username: us@sinay.tr
+    password: K4dk0sz4.!*
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
+        debug: false
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    cache: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# ===== JWT CONFIG =====
+app:
+  jwt:
+    secret: SinayRestCoreSecretKey2026-ChangeThisInProductionWithAVeryLongAndSecureRandomString
+    expiration-ms: 86400000        # 24 saat (ms)
+    refresh-expiration-ms: 604800000  # 7 gün (ms)
+
+  mail:
+    from: noreply@sinay.com
+    from-name: Sinay System
+
+  frontend-url: http://localhost:3000  # password reset link vs için
+
+  # İlk çalıştırmada MASTER_ADMIN oluşturulur
+  admin:
+    email: admin@sinay.com
+    password: Admin123!
+    name: System
+    surname: Admin
+
+  # ===== PAGINATION DEFAULTS =====
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+
+# ===== SWAGGER / OPENAPI =====
+springdoc:
+  api-docs:
+    enabled: true
+  show-actuator: false
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui
+
+# ===== LOGGING =====
+# Log konfigürasyonu logback-spring.xml dosyasında yapılıyor
+
+# ===== RATE LIMIT CONFIG =====
+rate-limit:
+  # Global rate limit (annotation olmayan tüm endpoint'ler için)
+  global:
+    enabled: true
+    capacity: 100
+    refill-tokens: 100
+    refill-duration-minutes: 1
+    ban-threshold: 15
+    ban-duration-minutes: 10
+    key-type: IP_AND_USER
+
+  # Annotation için varsayılan değerler (@RateLimit parametre vermezse)
+  default:
+    capacity: 50
+    refill-tokens: 50
+    refill-duration-minutes: 1
+    ban-threshold: 10
+    ban-duration-minutes: 10
+    warning-threshold-percent: 80
+  cache:
+    strike-ttl-minutes: 1
+    max-size: 10000
+
+# ===== FILE UPLOAD CONFIG =====
+upload:
+  base-dir: "D:/uploads"
+  categories:
+    image:
+      enabled: true
+      max-size-mb: 10
+      extensions: [jpg, jpeg, png, gif, webp]
+      generate-thumbnails: true
+    video:
+      enabled: true
+      max-size-mb: 100
+      extensions: [mp4, mov, webm]
+      generate-thumbnails: false
+    document:
+      enabled: true
+      max-size-mb: 20
+      extensions: [pdf, doc, docx, xls, xlsx, ppt, pptx, txt]
+      generate-thumbnails: false
+    archive:
+      enabled: true
+      max-size-mb: 50
+      extensions: [zip, rar, 7z]
+      generate-thumbnails: false
+    audio:
+      enabled: true
+      max-size-mb: 30
+      extensions: [mp3, wav, m4a, aac]
+      generate-thumbnails: false
+  thumbnail:
+    sizes:
+      small: 160
+      medium: 480
+      large: 1280
+    quality: 0.85
+    format: jpg
+  security:
+    max-filename-length: 255
+    check-magic-numbers: true
+    blocked-extensions: [exe, bat, sh, cmd, com, pif, scr, vbs, js, jar]
+  naming:
+    format: "{uuid}_{sanitized}"
+    preserve-extension: true
+    max-name-length: 100

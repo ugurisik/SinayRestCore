@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Doğrulama</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 32px; text-align: center; }
+        .header h1 { color: #fff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+        .header span { color: #6c63ff; }
+        .body { padding: 40px 32px; }
+        .greeting { font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+        .text { color: #64748b; font-size: 15px; line-height: 1.7; margin-bottom: 24px; }
+        .btn-wrapper { text-align: center; margin: 32px 0; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #6c63ff, #4f46e5); color: #fff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; }
+        .url-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 20px 0; }
+        .url-box p { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
+        .url-box a { color: #6c63ff; font-size: 13px; word-break: break-all; }
+        .footer { background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0; }
+        .footer p { color: #94a3b8; font-size: 12px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1><span th:text="${appName}">Sinay</span></h1>
+    </div>
+    <div class="body">
+        <p class="greeting">Merhaba <span th:text="${name}">Kullanıcı</span>,</p>
+        <p class="text">
+            Hesabınızı oluşturduğunuz için teşekkürler! Hesabınızı aktif hale getirmek için
+            aşağıdaki butona tıklayarak email adresinizi doğrulayın.
+        </p>
+        <div class="btn-wrapper">
+            <a th:href="${verifyUrl}" class="btn">Email Adresimi Doğrula</a>
+        </div>
+        <p class="text">
+            Buton çalışmıyorsa aşağıdaki linki tarayıcınıza kopyalayın:
+        </p>
+        <div class="url-box">
+            <p>Doğrulama linki</p>
+            <a th:href="${verifyUrl}" th:text="${verifyUrl}">link</a>
+        </div>
+        <p class="text" style="font-size: 13px; color: #94a3b8;">
+            Bu emaili siz talep etmediyseniz güvenle görmezden gelebilirsiniz.
+        </p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2024 <span th:text="${appName}">Sinay</span>. Tüm hakları saklıdır.</p>
+        <p style="margin-top: 4px;">Bu email otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.</p>
+    </div>
+</div>
+</body>
+</html>
