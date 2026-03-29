@@ -44,19 +44,27 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     /**
      * WebSocket endpoint registration.
      * <p>
-     * Client'lar bu endpoint'e bağlanır: ws://host:port/ws
+     * /ws → JWT token gerekli (production)
+     * /ws-test → Authentication yok (geliştirme/test için)
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Production endpoint - JWT auth gerekli
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // CORS - production'da kısıtla
-                .withSockJS();  // Fallback for browsers without WebSocket support
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
+
+        // Test endpoint - Authentication yok
+        registry.addEndpoint("/ws-test")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 
     /**
      * JWT authentication interceptor ekle.
      * <p>
      * Her CONNECT isteğinde JWT token doğrulanır.
+     * Test modu için X-Test-Mode header gönderilebilir.
      */
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {

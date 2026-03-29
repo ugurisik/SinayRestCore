@@ -19,7 +19,7 @@ import java.util.List;
  * WebSocket JWT authentication interceptor.
  * <p>
  * Her STOMP CONNECT isteğinde JWT token doğrular.
- * Token geçersizse bağlantı reddedilir.
+ * Test endpoint (/ws-test) için authentication gerekmez.
  */
 @Slf4j
 @Component
@@ -37,6 +37,18 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
         // Sadece CONNECT komutunu doğrula
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+            // Test endpoint kontrolü - native header'dan kontrol et
+            List<String> testHeaders = accessor.getNativeHeader("X-Test-Mode");
+            boolean isTestMode = testHeaders != null && !testHeaders.isEmpty() && testHeaders.get(0).equals("true");
+
+            if (isTestMode) {
+                log.info("WebSocket test endpoint - authentication atlandı");
+                // Test kullanıcısı set et
+                User principal = new User("test-user", "", List.of());
+                accessor.setUser(new UsernamePasswordAuthenticationToken(principal, null, List.of()));
+                return message;
+            }
+
             String token = extractToken(accessor);
 
             if (token != null && jwtUtil.isTokenValid(token)) {
