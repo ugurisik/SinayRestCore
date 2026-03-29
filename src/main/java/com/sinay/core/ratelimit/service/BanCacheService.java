@@ -8,8 +8,8 @@ import com.sinay.core.ratelimit.entities.QRateLimitBan;
 import com.sinay.core.ratelimit.entities.RateLimitBan;
 import com.sinay.core.ratelimit.exception.RateLimitBanException;
 import com.querydsl.core.types.Predicate;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@DependsOn("objectCoreInjector")
 public class BanCacheService {
 
     // Kalıcı ban threshold (7. ban'dan sonra kalıcı)
