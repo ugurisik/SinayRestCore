@@ -10,6 +10,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sinay.core.audit.enums.AuditAction;
 import com.sinay.core.audit.event.AuditEvent;
 import com.sinay.core.base.BaseEntity;
+import com.sinay.core.timetest.annotation.TimeTest;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -513,6 +514,7 @@ public final class ObjectCore {
      * @param entity Loglanacak entity
      * @param action İşlem tipi (CREATE, UPDATE, DELETE)
      */
+    @TimeTest(ms=1000)
     private static void publishAuditEvent(Object entity, AuditAction action) {
         if (applicationContext == null) {
             return;  // ApplicationContext hazır değilse loglama
@@ -644,6 +646,7 @@ public final class ObjectCore {
      *
      * @return Kullanıcı ID'si (String), giriş yapmamışsa null
      */
+    @TimeTest(ms=1000)
     private static String getCurrentUserId() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -673,6 +676,7 @@ public final class ObjectCore {
      *
      * @return Username, giriş yapmamışsa null
      */
+    @TimeTest(ms=1000)
     private static String getCurrentUsername() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -691,6 +695,7 @@ public final class ObjectCore {
      *
      * @return IP adresi, yoksa null
      */
+    @TimeTest(ms=1000)
     private static String getCurrentIp() {
         try {
             ServletRequestAttributes attributes =
@@ -714,6 +719,7 @@ public final class ObjectCore {
      *
      * @return User-Agent, yoksa null
      */
+    @TimeTest(ms=1000)
     private static String getCurrentUserAgent() {
         try {
             ServletRequestAttributes attributes =
@@ -747,6 +753,7 @@ public final class ObjectCore {
      * @return Başarılı ise saved entity, hatalı ise error message
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<T> save(T entity) {
         if (entity == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity null olamaz");
@@ -808,6 +815,7 @@ public final class ObjectCore {
      * @return Başarılı kaydedilenler listesi
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=2000)
     public static <T extends BaseEntity> ListResult<T> saveAll(List<T> entities, int flushCount, boolean withAudit) {
         if (entities == null || entities.isEmpty()) {
             return ListResult.empty();
@@ -921,6 +929,7 @@ public final class ObjectCore {
      * @return Başarılı ise empty Result, hatalı ise error
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<Void> delete(T entity) {
         if (entity == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity null olamaz");
@@ -963,6 +972,7 @@ public final class ObjectCore {
      * @return Başarılı ise empty Result, hatalı ise error
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<Void> hardDelete(T entity) {
         if (entity == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity null olamaz");
@@ -998,6 +1008,7 @@ public final class ObjectCore {
      * @param <T> Entity tipi (BaseEntity extend etmeli)
      * @return Başarılı ise entity, hatalı ise error
      */
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<T> getById(Class<T> cls, UUID id) {
         if (cls == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity class null olamaz");
@@ -1057,6 +1068,7 @@ public final class ObjectCore {
      * @return Cache'te varsa cache'ten, yoksa veritabanından
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<T> getByIdCached(Class<T> cls, UUID id) {
         if (cls == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity class null olamaz");
@@ -1145,6 +1157,7 @@ public final class ObjectCore {
      * @param <T>       Entity tipi
      * @return Başarılı ise entity, bulunamazsa notFound error
      */
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> Result<T> getByField(Class<T> cls, String fieldName, Object value) {
         if (cls == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "Entity class null olamaz");
@@ -1217,6 +1230,7 @@ public final class ObjectCore {
      * @param <T>       Entity tipi
      * @return Result - Bulunamazsa notFound error
      */
+    @TimeTest(ms=1000)
     public static <T> Result<T> findOne(EntityPathBase<T> qEntity, Predicate predicate) {
         if (qEntity == null) {
             return Result.error(ErrorCode.VALIDATION_ERROR, "QEntity null olamaz");
@@ -1262,6 +1276,7 @@ public final class ObjectCore {
      * @param <T>       Entity tipi
      * @return ListResult with data, total, page, size
      */
+    @TimeTest(ms=3000)
     public static <T> ListResult<T> list(EntityPathBase<T> qEntity,
                                         Predicate predicate,
                                         Pageable pageable) {
@@ -1321,6 +1336,7 @@ public final class ObjectCore {
      * @param <T>      Entity tipi (BaseEntity extend etmeli)
      * @return Sayfalı sonuç (data, total, page, size)
      */
+    @TimeTest(ms=3000)
     public static <T extends BaseEntity> ListResult<T> listAll(Class<T> cls, Pageable pageable) {
         if (cls == null) {
             throw new IllegalArgumentException("Entity class null olamaz");
@@ -1376,6 +1392,7 @@ public final class ObjectCore {
      * @param <T>       Entity tipi
      * @return Kayıt sayısı
      */
+    @TimeTest(ms=1000)
     public static <T> long count(EntityPathBase<T> qEntity, Predicate predicate) {
         if (qEntity == null) {
             throw new IllegalArgumentException("qEntity null olamaz");
@@ -1425,6 +1442,7 @@ public final class ObjectCore {
      * @param <T> Entity tipi
      * @return true varsa, false yoksa
      */
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> boolean existsById(Class<T> cls, UUID id) {
         if (cls == null) {
             throw new IllegalArgumentException("Entity class null olamaz");
@@ -1472,6 +1490,7 @@ public final class ObjectCore {
      * @param params Parameter değerleri (sıralı)
      * @return Sonuç listesi (column → value mapping)
      */
+    @TimeTest(ms=1000)
     public static List<Map<String, Object>> nativeQuery(String sql, Object... params) {
         if (sql == null || sql.isEmpty()) {
             throw new IllegalArgumentException("SQL null olamaz");
@@ -1525,6 +1544,7 @@ public final class ObjectCore {
      * @return Entity listesi
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T extends BaseEntity> List<T> nativeQuery(String sql, Class<T> resultClass, Object... params) {
         if (sql == null || sql.isEmpty()) {
             throw new IllegalArgumentException("SQL null olamaz");
@@ -1583,6 +1603,7 @@ public final class ObjectCore {
      * @param params Parameter değerleri (sıralı)
      * @return Etkilen satır sayısı
      */
+    @TimeTest(ms=1000)
     public static int nativeUpdate(String sql, Object... params) {
         if (sql == null || sql.isEmpty()) {
             throw new IllegalArgumentException("SQL null olamaz");
@@ -1636,6 +1657,7 @@ public final class ObjectCore {
      * @return Sorgu sonucu (null dönebilir)
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=1000)
     public static <T> T nativeQueryScalar(String sql, Class<T> resultClass, Object... params) {
         if (sql == null || sql.isEmpty()) {
             throw new IllegalArgumentException("SQL null olamaz");
@@ -1683,6 +1705,7 @@ public final class ObjectCore {
      * @return Field değeri
      * @throws ReflectionException Hata durumunda
      */
+    @TimeTest(ms=100)
     public static Object getFieldValue(Object entity, String fieldName) {
         if (entity == null) {
             throw new IllegalArgumentException("Entity null olamaz");
@@ -1718,6 +1741,7 @@ public final class ObjectCore {
      * @param value     Yeni değer
      * @throws ReflectionException Hata durumunda
      */
+    @TimeTest(ms=100)
     public static void setFieldValue(Object entity, String fieldName, Object value) {
         if (entity == null) {
             throw new IllegalArgumentException("Entity null olamaz");
@@ -1762,6 +1786,7 @@ public final class ObjectCore {
      * @return Target obje (method chaining için)
      * @throws IllegalArgumentException Source veya target null ise
      */
+    @TimeTest(ms=100)
     public static <S, T> T copyProperties(S source, T target) {
         if (source == null) {
             throw new IllegalArgumentException("Source null olamaz");
@@ -1817,6 +1842,7 @@ public final class ObjectCore {
      * @return Field
      * @throws NoSuchFieldException Bulunamazsa
      */
+    @TimeTest(ms=1000)
     private static Field findField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
         Class<?> currentClass = clazz;
         while (currentClass != null) {
@@ -1897,6 +1923,7 @@ public final class ObjectCore {
      * @return JSON string
      * @throws SerializationException Hata durumunda
      */
+    @TimeTest(ms=100)
     public static String serialize(Object obj) {
         if (obj == null) {
             return null;
@@ -1926,6 +1953,7 @@ public final class ObjectCore {
      * @return Obje
      * @throws SerializationException Hata durumunda
      */
+    @TimeTest(ms=100)
     public static <T> T deserialize(String json, Class<T> cls) {
         if (json == null || json.isEmpty()) {
             return null;
@@ -1961,6 +1989,7 @@ public final class ObjectCore {
      * @return Obje
      * @throws SerializationException Hata durumunda
      */
+    @TimeTest(ms=100)
     public static <T> T deserialize(String json, TypeReference<T> typeReference) {
         if (json == null || json.isEmpty()) {
             return null;
@@ -2001,6 +2030,7 @@ public final class ObjectCore {
      * @throws SerializationException   Hata durumunda
      */
     @SuppressWarnings("unchecked")
+    @TimeTest(ms=100)
     public static <T extends BaseEntity> T clone(T entity) {
         if (entity == null) {
             throw new IllegalArgumentException("Entity null olamaz");
