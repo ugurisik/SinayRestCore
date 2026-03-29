@@ -4,7 +4,7 @@
 
 **Yeniden Kullanılabilir REST API Core Framework**
 
-Spring Boot 4 tabanlı, üretim ready, genişletilebilir REST API altyapısı.
+Spring Boot 4 tabanlı, production ready, genişletilebilir REST API altyapısı.
 
 Yeni projelerde temel yapı olarak kullanılmak üzere tasarlanmıştır.
 
