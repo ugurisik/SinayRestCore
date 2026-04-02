@@ -1,6 +1,6 @@
 package com.sinay.core.base;
 
-import com.sinay.core.exception.ResourceNotFoundException;
+import com.sinay.core.exception.UsResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +54,7 @@ public abstract class BaseService {
     protected <T extends BaseEntity> T findOrThrow(Class<T> cls, UUID id) {
         T entity = entityManager.find(cls, id);
         if (entity == null || Boolean.FALSE.equals(entity.getVisible())) {
-            throw new ResourceNotFoundException(cls.getSimpleName(), id);
+            throw new UsResourceNotFoundException(cls.getSimpleName(), id);
         }
         return entity;
     }

@@ -7,10 +7,10 @@ import com.sinay.core.dto.response.UserResponse;
 import com.sinay.core.entity.QUser;
 import com.sinay.core.entity.Role;
 import com.sinay.core.entity.User;
-import com.sinay.core.exception.BadRequestException;
-import com.sinay.core.exception.ConflictException;
-import com.sinay.core.exception.ResourceNotFoundException;
-import com.sinay.core.exception.UnauthorizedException;
+import com.sinay.core.exception.UsBadRequestException;
+import com.sinay.core.exception.UsConflictException;
+import com.sinay.core.exception.UsResourceNotFoundException;
+import com.sinay.core.exception.UsUnauthorizedException;
 import com.sinay.core.mail.MailService;
 import com.sinay.core.mapper.UserMapper;
 import com.sinay.core.security.jwt.JwtUtil;
@@ -49,16 +49,16 @@ public class AuthService {
         // Email ve username unique kontrolü
         QUser q = QUser.user;
         if (ObjectCore.exists(q, q.email.eq(req.getEmail().toLowerCase()).and(q.visible.isTrue()))) {
-            throw new ConflictException("Bu email adresi zaten kullanımda: " + req.getEmail());
+            throw new UsConflictException("Bu email adresi zaten kullanımda: " + req.getEmail());
         }
         if (ObjectCore.exists(q, q.username.eq(req.getUsername().toLowerCase()).and(q.visible.isTrue()))) {
-            throw new ConflictException("Bu kullanıcı adı zaten alınmış: " + req.getUsername());
+            throw new UsConflictException("Bu kullanıcı adı zaten alınmış: " + req.getUsername());
         }
 
         // USER rolünü bul
         ObjectCore.Result<Role> roleResult = ObjectCore.getByField(Role.class, "name", Role.RoleName.USER);
         if (!roleResult.isSuccess()) {
-            throw new ResourceNotFoundException("USER rolü bulunamadı. DataInitializer çalıştı mı?");
+            throw new UsResourceNotFoundException("USER rolü bulunamadı. DataInitializer çalıştı mı?");
         }
         Role userRole = roleResult.getData();
 
@@ -113,7 +113,7 @@ public class AuthService {
                         : null;
 */
         if (user == null) {
-            throw new UnauthorizedException("Kullanıcı bulunamadı");
+            throw new UsUnauthorizedException("Kullanıcı bulunamadı");
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -147,7 +147,7 @@ public class AuthService {
         String refreshToken = req.getRefreshToken();
 
         if (!jwtUtil.isTokenValid(refreshToken)) {
-            throw new UnauthorizedException("Refresh token geçersiz veya süresi dolmuş");
+            throw new UsUnauthorizedException("Refresh token geçersiz veya süresi dolmuş");
         }
 
         QUser q = QUser.user;
@@ -155,14 +155,14 @@ public class AuthService {
         ObjectCore.Result<User> result = ObjectCore.findOne(q, predicate);
 
         if (!result.isSuccess()) {
-            throw new UnauthorizedException("Refresh token bulunamadı");
+            throw new UsUnauthorizedException("Refresh token bulunamadı");
         }
 
         User user = result.getData();
 
         if (user.getRefreshTokenExpiresAt() != null &&
                 user.getRefreshTokenExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new UnauthorizedException("Refresh token süresi dolmuş");
+            throw new UsUnauthorizedException("Refresh token süresi dolmuş");
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -209,13 +209,13 @@ public class AuthService {
         ObjectCore.Result<User> result = ObjectCore.findOne(q, predicate);
 
         if (!result.isSuccess()) {
-            throw new BadRequestException("Geçersiz token!");
+            throw new UsBadRequestException("Geçersiz token!");
         }
 
         User user = result.getData();
 
         if (user.getEmailVerifiedAt() != null) {
-            throw new BadRequestException("Bu email adresi zaten doğrulanmış");
+            throw new UsBadRequestException("Bu email adresi zaten doğrulanmış");
         }
 
         user.setEnabled(true);
@@ -254,14 +254,14 @@ public class AuthService {
         ObjectCore.Result<User> result = ObjectCore.findOne(q, predicate);
 
         if (!result.isSuccess()) {
-            throw new BadRequestException("Geçersiz veya kullanılmış şifre sıfırlama token'ı");
+            throw new UsBadRequestException("Geçersiz veya kullanılmış şifre sıfırlama token'ı");
         }
 
         User user = result.getData();
 
         if (user.getPasswordResetTokenExpiresAt() == null ||
                 user.getPasswordResetTokenExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Şifre sıfırlama token'ının süresi dolmuş. Lütfen tekrar talep edin");
+            throw new UsBadRequestException("Şifre sıfırlama token'ının süresi dolmuş. Lütfen tekrar talep edin");
         }
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));

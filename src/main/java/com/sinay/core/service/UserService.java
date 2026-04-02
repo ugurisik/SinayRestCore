@@ -4,8 +4,8 @@ import com.sinay.core.dto.request.ChangePasswordRequest;
 import com.sinay.core.dto.request.UpdateUserRequest;
 import com.sinay.core.dto.response.UserResponse;
 import com.sinay.core.entity.User;
-import com.sinay.core.exception.BadRequestException;
-import com.sinay.core.exception.ResourceNotFoundException;
+import com.sinay.core.exception.UsBadRequestException;
+import com.sinay.core.exception.UsResourceNotFoundException;
 import com.sinay.core.core.ObjectCore;
 import com.sinay.core.mapper.UserMapper;
 import com.sinay.core.security.userdetails.AppUserDetails;
@@ -17,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -37,7 +35,7 @@ public class UserService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userDetails.getId());
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userDetails.getId());
+            throw new UsResourceNotFoundException("User", userDetails.getId());
         }
         return userMapper.toResponse(result.getData());
     }
@@ -51,7 +49,7 @@ public class UserService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userDetails.getId());
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userDetails.getId());
+            throw new UsResourceNotFoundException("User", userDetails.getId());
         }
 
         User user = result.getData();
@@ -74,16 +72,16 @@ public class UserService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userDetails.getId());
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userDetails.getId());
+            throw new UsResourceNotFoundException("User", userDetails.getId());
         }
 
         User user = result.getData();
         if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
-            throw new BadRequestException("Mevcut şifre hatalı");
+            throw new UsBadRequestException("Mevcut şifre hatalı");
         }
 
         if (passwordEncoder.matches(req.getNewPassword(), user.getPassword())) {
-            throw new BadRequestException("Yeni şifre, mevcut şifre ile aynı olamaz");
+            throw new UsBadRequestException("Yeni şifre, mevcut şifre ile aynı olamaz");
         }
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
@@ -103,7 +101,7 @@ public class UserService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, id);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", id);
+            throw new UsResourceNotFoundException("User", id);
         }
         return userMapper.toResponse(result.getData());
     }

@@ -7,14 +7,13 @@ import com.sinay.core.entity.QRole;
 import com.sinay.core.entity.QUser;
 import com.sinay.core.entity.Role;
 import com.sinay.core.entity.User;
-import com.sinay.core.exception.BadRequestException;
-import com.sinay.core.exception.ResourceNotFoundException;
+import com.sinay.core.exception.UsBadRequestException;
+import com.sinay.core.exception.UsResourceNotFoundException;
 import com.sinay.core.mapper.UserMapper;
 import com.querydsl.core.types.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -74,7 +73,7 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, id);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", id);
+            throw new UsResourceNotFoundException("User", id);
         }
         return userMapper.toResponse(result.getData());
     }
@@ -87,7 +86,7 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
@@ -96,11 +95,11 @@ public class AdminService {
         try {
             roleName = Role.RoleName.valueOf(roleNameStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Geçersiz rol: " + roleNameStr);
+            throw new UsBadRequestException("Geçersiz rol: " + roleNameStr);
         }
 
         if (user.hasRole(roleName)) {
-            throw new BadRequestException("Kullanıcı zaten bu role sahip: " + roleName);
+            throw new UsBadRequestException("Kullanıcı zaten bu role sahip: " + roleName);
         }
 
         // Rolü ObjectCore ile bul
@@ -109,7 +108,7 @@ public class AdminService {
         ObjectCore.Result<Role> roleResult = ObjectCore.getByField(Role.class, "name", roleName);
 
         if (!roleResult.isSuccess()) {
-            throw new ResourceNotFoundException("Role", roleName.toString());
+            throw new UsResourceNotFoundException("Role", roleName.toString());
         }
 
         Role role = roleResult.getData();
@@ -130,7 +129,7 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
@@ -139,16 +138,16 @@ public class AdminService {
         try {
             roleName = Role.RoleName.valueOf(roleNameStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Geçersiz rol: " + roleNameStr);
+            throw new UsBadRequestException("Geçersiz rol: " + roleNameStr);
         }
 
         if (!user.hasRole(roleName)) {
-            throw new BadRequestException("Kullanıcının bu rolü yok: " + roleName);
+            throw new UsBadRequestException("Kullanıcının bu rolü yok: " + roleName);
         }
 
         // MASTER_ADMIN rolü kendisinden çıkarılamaz
         if (user.isMasterAdmin() && roleName == Role.RoleName.MASTER_ADMIN) {
-            throw new BadRequestException("MASTER_ADMIN rolü kaldırılamaz");
+            throw new UsBadRequestException("MASTER_ADMIN rolü kaldırılamaz");
         }
 
         Set<Role> roles = new HashSet<>(user.getRoles());
@@ -167,13 +166,13 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
 
         if (user.getAccountLocked()) {
-            throw new BadRequestException("Kullanıcı zaten kilitli");
+            throw new UsBadRequestException("Kullanıcı zaten kilitli");
         }
 
         user.setAccountLocked(true);
@@ -192,13 +191,13 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
 
         if (!user.getAccountLocked()) {
-            throw new BadRequestException("Kullanıcı kilitli değil");
+            throw new UsBadRequestException("Kullanıcı kilitli değil");
         }
 
         user.setAccountLocked(false);
@@ -215,13 +214,13 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
 
         if (user.getEnabled()) {
-            throw new BadRequestException("Kullanıcı zaten aktif");
+            throw new UsBadRequestException("Kullanıcı zaten aktif");
         }
 
         user.setEnabled(true);
@@ -238,7 +237,7 @@ public class AdminService {
         ObjectCore.Result<User> result = ObjectCore.getById(User.class, userId);
 
         if (!result.isSuccess()) {
-            throw new ResourceNotFoundException("User", userId);
+            throw new UsResourceNotFoundException("User", userId);
         }
 
         User user = result.getData();
@@ -246,12 +245,12 @@ public class AdminService {
         // Kendini silemez (ama bu kontrol auth context'ten yapılmalı)
         // MASTER_ADMIN silinemez
         if (user.isMasterAdmin()) {
-            throw new BadRequestException("MASTER_ADMIN silinemez");
+            throw new UsBadRequestException("MASTER_ADMIN silinemez");
         }
 
         ObjectCore.Result<Void> deleteResult = ObjectCore.delete(user);
         if (!deleteResult.isSuccess()) {
-            throw new BadRequestException(deleteResult.getError());
+            throw new UsBadRequestException(deleteResult.getError());
         }
 
         log.info("User deleted (soft): {}", userId);

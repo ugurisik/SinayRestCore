@@ -1,6 +1,7 @@
 package com.sinay.core.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.sinay.core.exception.UsErrorCode;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -21,6 +22,7 @@ public class ApiResponse<T> {
     private final String message;
     private final T data;
     private final Object error;
+    private final UsErrorCode errorCode;
 
     @Builder.Default
     private final LocalDateTime timestamp = LocalDateTime.now();
@@ -53,6 +55,23 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> fail(String message, UsErrorCode errorCode) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .errorCode(errorCode)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> fail(String message, UsErrorCode errorCode, Object error) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .errorCode(errorCode)
+                .error(error)
                 .build();
     }
 
