@@ -1,11 +1,10 @@
 package com.sinay.core.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.sinay.core.exception.UsErrorCode;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 /**
  * Tüm API cevapları bu wrapper'a sarılır.
@@ -16,6 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class ApiResponse<T> {
 
     private final boolean success;
@@ -23,9 +23,6 @@ public class ApiResponse<T> {
     private final T data;
     private final Object error;
     private final UsErrorCode errorCode;
-
-    @Builder.Default
-    private final LocalDateTime timestamp = LocalDateTime.now();
 
     // ===== FACTORY METHODS =====
 

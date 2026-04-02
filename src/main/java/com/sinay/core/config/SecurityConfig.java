@@ -1,5 +1,7 @@
 package com.sinay.core.config;
 
+import com.sinay.core.security.CustomAccessDeniedHandler;
+import com.sinay.core.security.CustomAuthenticationEntryPoint;
 import com.sinay.core.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +35,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     // Public endpointler — auth gerektirmez
     private static final String[] PUBLIC_URLS = {
@@ -41,7 +45,6 @@ public class SecurityConfig {
             "/api/v1/auth/refresh",
             "/api/v1/auth/verify-email",
             "/api/v1/auth/forgot-password",
-            "/api/v1/auth/reset-password",
             "/api/v1/public/**",
             "/actuator/health",
             "/v3/api-docs/**",
@@ -61,6 +64,12 @@ public class SecurityConfig {
                 // Session — STATELESS, JWT kullanıyoruz
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Exception handling — 401 ve 403 için custom ApiResponse
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
 
                 // Authorization kuralları
                 .authorizeHttpRequests(auth -> auth
@@ -109,4 +118,3 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-}
