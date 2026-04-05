@@ -15,6 +15,7 @@ public class SinayRestCoreApplication {
     public static void main(String[] args) {
         // Logs dizinini oluştur (logback için)
         createLogsDirectory();
+        DatabaseConnectionValidator.validate();
         SpringApplication.run(SinayRestCoreApplication.class, args);
     }
 
