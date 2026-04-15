@@ -40,9 +40,9 @@ public class AuthController {
         banThreshold = 3,
         banDurationMinutes = 30
     )
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
         UserResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -60,9 +60,9 @@ public class AuthController {
     )
     @TimeTest(ms = 1000, level = TimeTest.LogLevel.INFO)
    // @AuditLog(action = AuditAction.LOGIN, entityType = "USER", message = "Giriş yapıldı")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         AuthResponse response = authService.login(request, httpRequest);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -70,9 +70,9 @@ public class AuthController {
      * Refresh token ile yeni access token alır.
      */
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<ApiResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refreshToken(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -120,8 +120,8 @@ public class AuthController {
      * Yeni şifre belirler.
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok("Şifreniz başarılı bir şekilde sıfırlandı."));
     }
 }

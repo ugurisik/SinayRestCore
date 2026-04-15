@@ -2,6 +2,7 @@ package com.sinay.core.server.controller;
 
 import com.sinay.core.server.dto.request.ChangePasswordRequest;
 import com.sinay.core.server.dto.request.UpdateUserRequest;
+import com.sinay.core.server.dto.response.ApiResponse;
 import com.sinay.core.server.dto.response.UserResponse;
 import com.sinay.core.server.service.UserService;
 import jakarta.validation.Valid;
@@ -23,9 +24,9 @@ public class UserController {
      * Giriş yapmış kullanıcının profil bilgilerini getirir.
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getMyProfile() {
+    public ResponseEntity<ApiResponse> getMyProfile() {
         UserResponse response = userService.getMyProfile();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -33,9 +34,9 @@ public class UserController {
      * Giriş yapmış kullanıcının profil bilgilerini günceller.
      */
     @PatchMapping("/me")
-    public ResponseEntity<UserResponse> updateMyProfile(@Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<ApiResponse> updateMyProfile(@Valid @RequestBody UpdateUserRequest request) {
         UserResponse response = userService.updateMyProfile(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -43,8 +44,8 @@ public class UserController {
      * Giriş yapmış kullanıcının şifresini değiştirir.
      */
     @PostMapping("/me/change-password")
-    public ResponseEntity<Void> changeMyPassword(@Valid @RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<ApiResponse> changeMyPassword(@Valid @RequestBody ChangePasswordRequest request) {
         userService.changeMyPassword(request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok("Şifre başarılı bir şekilde değiştirildi."));
     }
 }

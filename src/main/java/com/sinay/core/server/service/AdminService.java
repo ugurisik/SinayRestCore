@@ -96,7 +96,7 @@ public class AdminService {
             roleName = Role.RoleName.valueOf(roleNameStr.toUpperCase());
         } catch (IllegalArgumentException e) {
             UsException.firlat("Geçersiz rol: " + roleNameStr, UsErrorCode.BAD_REQUEST);
-            return; // Never reached, but satisfies compiler
+            return; // alttaki hata için...
         }
 
         if (user.hasRole(roleName)) {
@@ -118,7 +118,6 @@ public class AdminService {
         user.setRoles(roles);
 
         ObjectCore.save(user);
-        log.info("Role {} added to user {}", roleName, userId);
     }
 
     /**

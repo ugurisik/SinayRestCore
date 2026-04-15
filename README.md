@@ -149,6 +149,13 @@ curl http://localhost:8080/api/v1/users/me \
 
 ## <a name="api-endpoints"></a> 📡 API Endpoint'leri
 
+### Swagger/OpenAPI Dokümantasyonu
+
+```
+GET    /swagger-ui.html            Swagger UI (Interaktif API dokümantasyonu)
+GET    /v3/api-docs                OpenAPI 3.0 JSON spec
+```
+
 ### Authentication — Public
 
 ```
@@ -375,7 +382,6 @@ public ResponseEntity<?> getContent() {
 | Dosya | İçerik |
 |-------|--------|
 | **[usage.md](usage.md)** | Detaylı kullanım kılavuzu, anotasyonlar, örnekler |
-| **[CLAUDE.md](CLAUDE.md)** | Geliştirme kuralları, kod standartları, best practices |
 | **[pom.xml](pom.xml)** | Maven bağımlılıkları |
 
 ### usage.md İçeriği
@@ -389,6 +395,347 @@ public ResponseEntity<?> getContent() {
 - **Pagination & Sorting** — PageableRequest kullanımı
 - **Request Logging** — Correlation ID tracking
 - **WebSocket** — Real-time mesajlaşma
+
+---
+
+## <a name="filter-structure"></a> 🔍 Filter Yapısı
+
+Her HTTP isteği şu filter'lardan geçer:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     HTTP Request                                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  1. RequestLoggingFilter                                        │
+│     • Correlation ID oluşturur                                  │
+│     • İstek/response loglar                                     │
+│     • Performance tracking (>1000ms = WARN)                     │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  2. TransactionBoundaryFilter                                   │
+│     • Transaction leak detection                                │
+│     • Memory leak önleme                                        │
+│     • @Transactional kontrolü                                   │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  3. GlobalRateLimitFilter                                       │
+│     • Token bucket rate limiting (100 req/dakika)              │
+│     • Ban management (15 strike = 10 dakika ban)               │
+│     • IP + User based key                                      │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  4. JwtAuthenticationFilter (Spring Security içinde)            │
+│     • JWT token doğrulama                                       │
+│     • User details yükleme                                      │
+│     • Security context ayarlama                                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Controller                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## <a name="transaction-boundary"></a> 🔄 Transaction Boundary
+
+### ObjectCore ve Transaction İlişkisi
+
+**Kural:** ObjectCore metodları çağıran her Service metodu `@Transactional` olmalıdır.
+
+```java
+// ❌ YANLIŞ - Transaction yok, HATA verir!
+public UserResponse getById(UUID id) {
+    Result<User> result = ObjectCore.getById(User.class, id);
+    // HATA: "No EntityManager with actual transaction available"
+}
+
+// ✅ DOĞRU - Transaction var
+@Transactional(readOnly = true)
+public UserResponse getById(UUID id) {
+    Result<User> result = ObjectCore.getById(User.class, id);
+    return mapper.toResponse(result.getData());
+}
+```
+
+### Transaction Koruma Mekanizması
+
+**1. ObjectCoreTransactionAspect (AspectJ)**
+- ObjectCore çağrıldığında transaction kontrolü
+- Write operasyonlarında (save, delete, vb.) WARN log
+- Strict mode'da exception fırlatır
+
+**2. TransactionBoundaryFilter (Servlet Filter)**
+- Request başında/sonunda transaction kontrolü
+- Transaction leak detection
+- Memory leak önleme (EntityManager temizleme)
+
+### Konfigürasyon
+
+```yaml
+# application.yaml
+transaction-boundary:
+  strict-mode: false  # Geliştirme: false, Production: true
+```
+
+```bash
+# JVM argüman ile
+java -jar app.jar --transaction-boundary.strict-mode=true
+```
+
+---
+
+## <a name="environment-variables"></a> 🔧 Environment Variables
+
+`.env` dosyası veya environment variables ile konfigürasyon:
+
+```bash
+# Database
+DB_URL=jdbc:mysql://localhost:3306/sinay_core
+DB_USERNAME=root
+DB_PASSWORD=password
+
+# JWT
+JWT_SECRET=your-secret-key-min-256-bits
+JWT_ACCESS_TOKEN_EXPIRATION=900000    # 15 dakika (ms)
+JWT_REFRESH_TOKEN_EXPIRATION=604800000 # 7 gün (ms)
+
+# Redis (Cache)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Admin User (İlk başlatma için)
+ADMIN_EMAIL=admin@sirket.com
+ADMIN_PASSWORD=GucluSifre123!
+ADMIN_NAME=Admin
+ADMIN_SURNAME=User
+
+# File Upload
+FILE_UPLOAD_DIR=./uploads
+FILE_MAX_SIZE=10485760  # 10MB (byte)
+
+# Rate Limiting
+RATE_LIMIT_CAPACITY=100
+RATE_LIMIT_REFILL_TOKENS=100
+RATE_LIMIT_BAN_THRESHOLD=15
+
+# Transaction Boundary
+TRANSACTION_BOUNDARY_STRICT_MODE=false  # Production: true
+
+# Mail (SMTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=noreply@sirket.com
+```
+
+---
+
+## <a name="error-codes"></a> 🚨 Hata Kodları
+
+| HTTP Status | Error Code | Açıklama |
+|-------------|------------|----------|
+| 400 | VALIDATION_ERROR | Validasyon hatası |
+| 400 | BAD_REQUEST | Geçersiz istek |
+| 401 | UNAUTHORIZED | Kimlik doğrulama yok |
+| 401 | INVALID_TOKEN | Geçersiz JWT token |
+| 401 | TOKEN_EXPIRED | Token süresi dolmuş |
+| 403 | FORBIDDEN | Yetkisiz erişim |
+| 403 | ACCOUNT_LOCKED | Hesap kilitli |
+| 404 | RESOURCE_NOT_FOUND | Kaynak bulunamadı |
+| 409 | CONFLICT | Çakışma (duplicate vb.) |
+| 429 | RATE_LIMIT_EXCEEDED | Rate limit aşıldı |
+| 429 | TOO_MANY_REQUESTS | Çok fazla istek |
+| 429 | BANNED | IP/Kullanıcı banlandı |
+| 500 | INTERNAL_ERROR | Internal server error |
+
+---
+
+## <a name="troubleshooting"></a> 🔧 Troubleshooting
+
+### "No EntityManager with actual transaction available"
+
+**Sorun:** ObjectCore çağrıldığında transaction yok.
+
+**Çözüm:**
+```java
+@Service
+public class UserService {
+    // @Transactional ekleyin
+    @Transactional(readOnly = true)
+    public UserResponse getById(UUID id) {
+        Result<User> result = ObjectCore.getById(User.class, id);
+        // ...
+    }
+}
+```
+
+### "Connection refused" Hatası
+
+**Sorun:** Database/Redis başlatılmamış.
+
+**Çözüm:**
+```bash
+# MySQL başlat
+brew services start mysql  # macOS
+systemctl start mysql     # Linux
+
+# Redis başlat
+redis-server
+```
+
+### Q-Class Bulunamıyor
+
+**Sorun:** QueryDSL Q-class'ları generate edilmemiş.
+
+**Çözüm:**
+```bash
+mvn clean compile
+# IDE'de target/generated-sources/annotations'u Sources Root olarak işaretle
+```
+
+### Rate Limit Banlandı
+
+**Sorun:** Çok fazla istek atıldı.
+
+**Çözüm:**
+```bash
+# Ban'ı manuel kaldır (Redis)
+redis-cli FLUSHDB
+# Veya bekleyin (otomatik kalkar)
+```
+
+### JWT Token Refresh Sorunu
+
+**Sorun:** Refresh token süresi doldu.
+
+**Çözüm:** Yeniden login yapın:
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"email","password":"password"}'
+```
+
+---
+
+## <a name="performance-tuning"></a> ⚡ Performance Tuning
+
+### Database
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+```
+
+### Cache
+
+```yaml
+spring:
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000  # 5 dakika
+      cache-null-values: false
+```
+
+### Rate Limiting
+
+```yaml
+rate-limit:
+  global:
+    capacity: 200           # Production için artır
+    refill-tokens: 200
+    ban-threshold: 20
+```
+
+### JVM Args
+
+```bash
+java -Xms512m -Xmx2g \
+     -XX:+UseG1GC \
+     -XX:MaxGCPauseMillis=200 \
+     -jar app.jar
+```
+
+---
+
+## <a name="testing"></a> 🧪 Testing
+
+### Test Çalıştırma
+
+```bash
+# Tüm testler
+mvn test
+
+# Sadece bir test sınıfı
+mvn test -Dtest=UserServiceTest
+
+# Sadece bir test metodu
+mvn test -Dtest=UserServiceTest#testCreateUser
+
+# Coverage raporu
+mvn clean test jacoco:report
+# Rapor: target/site/jacoco/index.html
+```
+
+### Test Konfigürasyonu
+
+`src/test/resources/application-test.yaml`:
+```yaml
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+```
+
+---
+
+## <a name="contributing"></a> 🤝 Contributing
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Commit yapın (`git commit -m 'feat: Add amazing feature'`)
+4. Push edin (`git push origin feature/amazing-feature`)
+5. Pull Request açın
+
+### Commit Convention
+
+```
+feat:     Yeni özellik
+fix:      Bug fix
+docs:     Dokümantasyon
+style:    Kod formatı
+refactor: Refactoring
+test:     Test
+chore:    Build/process
+```
 
 ---
 
@@ -420,6 +767,111 @@ Test sonucu `target/surefire-reports/` klasöründe.
 
 ---
 
+## <a name="changelog"></a> 📝 Changelog
+
+### Version 2.1 (2026-03-29)
+
+**Yeni Özellikler:**
+- ✨ TransactionBoundaryFilter - Transaction leak detection
+- ✨ ObjectCoreTransactionAspect - Transaction kontrolü
+- ✨ RequestLoggingFilter - Correlation ID ile request tracking
+- ✨ GlobalRateLimitFilter - Token bucket rate limiting
+- ✨ WebSocket support - JWT authenticated real-time messaging
+- ✨ File Upload module - Multi-provider file storage
+- ✨ Cache system - Redis + Caffeine hybrid
+- ✨ Audit Logging - Automatic entity/operation logging
+- ✨ Event System - Domain events with @PublishEvent
+- ✨ Job Scheduler - Distributed scheduled jobs
+- ✨ Notification System - Email, SMS, Push, In-app
+- ✨ TimeTest annotation - Method performance testing
+
+**İyileştirmeler:**
+- 🚀 ObjectCore ile repository'siz CRUD
+- 🚀 PageableRequest standardization
+- 🚀 Native SQL support (4 yeni metod)
+- 🚀 Lookup cache (Caffeine)
+- 🚀 Spring Page dönüşümü (toPage)
+
+**Bug Fixes:**
+- 🐛 Circular reference audit log fix
+- 🐛 EntityManager thread-safety
+- 🐛 Memory leak prevention
+
+---
+
+## <a name="roadmap"></a> 🗺️ Roadmap
+
+### v2.2 (Planlanan)
+- [ ] GraphQL Support
+- [ ] Multi-tenancy
+- [ ] Elasticsearch integration
+- [ ] Distributed tracing (OpenTelemetry)
+- [ ] Metrics (Prometheus + Grafana)
+
+### v3.0 (Gelecek)
+- [ ] Microservices support
+- [ ] Event sourcing
+- [ ] CQRS pattern
+- [ ] gRPC support
+- [ ] Kubernetes Helm charts
+
+---
+
+## <a name="architecture"></a> 🏗️ Architecture
+
+### Layer Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Presentation Layer                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  Controller  │  │  DTO Mapper  │  │  Validators  │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│                      Business Layer                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │    Service   │  │  ObjectCore  │  │  Event Pub.  │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Cache      │  │    Audit     │  │  Rate Limit  │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│                      Data Access Layer                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   JPA/Hiber. │  │  QueryDSL    │  │  Redis       │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│                      Storage Layer                           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   MySQL      │  │  File System │  │   S3/Azure   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Cross-Cutting Concerns
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Cross-Cutting Concerns                   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Security      │ JWT, Role-Based, Rate Limiting      │   │
+│  │  Logging       │ Request, Audit, Correlation ID      │   │
+│  │  Caching       │ Redis, Caffeine, Lookup Cache       │   │
+│  │  Validation    │ Input, Business, Output             │   │
+│  │  Events        │ Domain Events, Async Listeners      │   │
+│  │  Transactions  │ @Transactional, Boundary Checks     │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## <a name="lisans"></a> 📜 Lisans
 
 MIT License — Detaylar için [LICENSE](LICENSE) dosyasına bakın.
@@ -430,5 +882,5 @@ MIT License — Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 **Developer:** Uğur Işık
 
-*Son güncelleme: 2026-03-29*
+*Son güncelleme: 2026-04-15*
 *Version: 2.1*
